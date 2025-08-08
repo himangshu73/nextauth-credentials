@@ -2,7 +2,6 @@ import dbConnect from "@/utils/dbConnect";
 import UserModel from "@/model/user";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
-import { verificationEmail } from "@/lib/emailTemplate/emailTemplates";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -11,7 +10,7 @@ export async function POST(request: NextRequest) {
   await dbConnect();
 
   try {
-    const { name, email, password } = await request.json();
+    const { email, password } = await request.json();
 
     const existingUser = await UserModel.findOne({
       email,
@@ -37,8 +36,8 @@ export async function POST(request: NextRequest) {
           await resend.emails.send({
             from: "Himangshu XYZ <otp@himangshu.xyz>",
             to: email,
-            subject: "Welcome Back to Himangshu XYZ",
-            html: verificationEmail(name, otp, otpExpiry),
+            subject: `Welcome Back`,
+            html: `<p>Your OTP is ${otp}. OTP will be expired in ${otpExpiry}</p>`,
           });
         } catch (error) {
           console.error("Resend email error:", error);
@@ -57,7 +56,6 @@ export async function POST(request: NextRequest) {
     otpExpiry.setHours(otpExpiry.getHours() + 1);
 
     const newUser = new UserModel({
-      name,
       email,
       password: hashedPassword,
       otp,
@@ -69,8 +67,8 @@ export async function POST(request: NextRequest) {
       await resend.emails.send({
         from: "Himangshu XYZ <otp@himangshu.xyz>",
         to: email,
-        subject: "Welcome Back to Himangshu XYZ",
-        html: verificationEmail(name, otp, otpExpiry),
+        subject: `Welcome`,
+        html: `<p>Your OTP is ${otp}. OTP will be expired in ${otpExpiry}</p>`,
       });
     } catch (error) {
       console.error("Resend email error:", error);
